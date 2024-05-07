@@ -26,14 +26,12 @@ export class UsersService {
     }
 
     const hashedPassword = await hash(createUserDto.password);
-    const { id } = await this.db.user.create({
+    return this.db.user.create({
       data: {
         ...createUserDto,
         password: hashedPassword,
       },
     });
-
-    return { id };
   }
 
   findAll() {
@@ -88,7 +86,7 @@ export class UsersService {
       updateUserDto.password = await hash(password);
     }
 
-    return await this.db.user.update({
+    return this.db.user.update({
       where: this.db.buildWhereClause(field, value),
       data: updateUserDto,
     });

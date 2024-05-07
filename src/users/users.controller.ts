@@ -7,31 +7,21 @@ import {
   HttpStatus,
   Param,
   Patch,
-  Post,
   UseGuards,
 } from '@nestjs/common';
 
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
-import { CreateUserDto } from './dto/create-user.dto';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+@UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   private allowedFields = ['id', 'email'];
 
-  @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    return {
-      statusCode: HttpStatus.CREATED,
-      message: await this.usersService.create(createUserDto),
-    };
-  }
-
-  @UseGuards(JwtAuthGuard)
   @Get()
   findAll() {
     return this.usersService.findAll();
