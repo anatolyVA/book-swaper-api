@@ -10,10 +10,14 @@ import { DatabaseService } from 'src/database/database.service';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { BasketService } from '../basket/basket.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private db: DatabaseService) {}
+  constructor(
+    private db: DatabaseService,
+    private basketService: BasketService,
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
     const existingUser = await this.db.recordsExists(
@@ -30,6 +34,9 @@ export class UsersService {
       data: {
         ...createUserDto,
         password: hashedPassword,
+        basket: {
+          create: {},
+        },
       },
     });
   }

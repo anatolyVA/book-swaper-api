@@ -3,36 +3,155 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model User {
   id String @id @default(uuid()) @db.Uuid
 
-  email String @unique
+  email    String @unique
   password String
-  
+  role     Role   @default(USER)
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
-  posts Post[]
+  basket    Basket?
+  orders    Order[]
 
   @@map("users")
 }
 
-model Post {
-  id String @id @default(uuid()) @db.Uuid
-  authorId String @db.Uuid
+model Basket {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @map("user_id") @db.Uuid
 
-  title String
-  text String
+  user User @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  author User @relation(fields: [authorId], references: [id])
+  basketItems BasketItems[]
 
-  @@map("posts")
+  @@map("baskets")
+}
+
+model BasketItems {
+  basketId String @map("basket_id") @db.Uuid
+  coffeeId String @map("coffee_id") @db.Uuid
+
+  quantity Int
+
+  basket Basket @relation(fields: [basketId], references: [id])
+  coffee Coffee @relation(fields: [coffeeId], references: [id])
+
+  @@id([basketId, coffeeId])
+  @@map("basket_items")
+}
+
+model Order {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  user   User   @relation(fields: [userId], references: [id])
+  status Status @default(PLACED)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  orderItems OrderItems[]
+
+  @@map("orders")
+}
+
+model OrderItems {
+  orderId  String @map("basket_id") @db.Uuid
+  coffeeId String @map("coffee_id") @db.Uuid
+
+  quantity Int
+
+  order  Order  @relation(fields: [orderId], references: [id])
+  coffee Coffee @relation(fields: [coffeeId], references: [id])
+
+  @@id([orderId, coffeeId])
+  @@map("order_items")
+}
+
+model Coffee {
+  id     String @id @default(uuid()) @db.Uuid
+  beenId String @map("been_id") @db.Uuid
+
+  title       String
+  type        CoffeeType
+  price       Decimal
+  description String
+  imageUrl    String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  been        Been          @relation(fields: [beenId], references: [id])
+  basketItems BasketItems[]
+  orderItems  OrderItems[]
+
+  @@map("coffee")
+}
+
+model Been {
+  id             String @id @default(uuid()) @db.Uuid
+  manufacturerId String @map("manufacturer_id") @db.Uuid
+
+  title       String
+  description String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  manufacturer Manufacturer @relation(fields: [manufacturerId], references: [id])
+
+  coffee Coffee[]
+
+  @@map("been")
+}
+
+model Manufacturer {
+  id String @id @default(uuid()) @db.Uuid
+
+  title   String
+  country String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  been Been[]
+
+  @@map("manufacturers")
+}
+
+enum Status {
+  PLACED
+  PROCCESSING
+  SHIPPED
+  DELIVIRED
+  CANCELED
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum CoffeeType {
+  LATTE
+  ESPRESSO
+  AMERICANO
+  CAPPUCCINO
+  MACCHIATO
+  MOCHA
+  FLAT_WHITE
+  COLD_BREW
+  POUR_OVER
+  FRENCH_PRESS
+  TURKISH
 }

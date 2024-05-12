@@ -11,9 +11,11 @@ import { Request, Response } from 'express';
 
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { LocalAuthGuard } from './guards/local-auth.guard';
+import { LocalAuthGuard } from './guards';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -26,10 +28,9 @@ export class AuthController {
   ) {
     const { refresh_token, access_token } =
       await this.authService.login(loginDto);
-    response.cookie('refresh_token', refresh_token, {
-      httpOnly: true,
-      sameSite: true,
-    });
+
+    await this.setRefreshTokenCookie(refresh_token, response);
+
     return { access_token };
   }
 
@@ -40,10 +41,9 @@ export class AuthController {
   ) {
     const { refresh_token, access_token } =
       await this.authService.register(createUserDto);
-    response.cookie('refresh_token', refresh_token, {
-      httpOnly: true,
-      sameSite: true,
-    });
+
+    await this.setRefreshTokenCookie(refresh_token, response);
+
     return { access_token };
   }
 
@@ -55,10 +55,9 @@ export class AuthController {
     const { refresh_token, access_token } = await this.authService.refresh(
       request.cookies['refresh_token'],
     );
-    response.cookie('refresh_token', refresh_token, {
-      httpOnly: true,
-      sameSite: true,
-    });
+
+    await this.setRefreshTokenCookie(refresh_token, response);
+
     return { access_token };
   }
 
@@ -66,5 +65,16 @@ export class AuthController {
   async logout(@Res({ passthrough: true }) response: Response) {
     response.clearCookie('refresh_token');
     return 'Successfully logged out.';
+  }
+
+  private async setRefreshTokenCookie(
+    refreshToken: string,
+    response: Response,
+  ) {
+    response.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      // secure: process.env.NODE_ENV === 'production', // Set secure only in production
+      sameSite: 'strict',
+    });
   }
 }

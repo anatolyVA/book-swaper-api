@@ -1,46 +1,58 @@
 import {
   BadRequestException,
   Body,
+  ClassSerializerInterceptor,
   Controller,
   Delete,
   Get,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { CurrentUser, Roles, Public } from '../auth/decorators';
+import { Role, User } from '@prisma/client';
+import { RolesGuard, JwtAuthGuard } from '../auth/guards';
+import { ResponseUserDto } from './dto/response-user.dto';
+import { plainToInstance } from 'class-transformer';
 
-@UseGuards(JwtAuthGuard)
+@ApiTags('users')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@UseInterceptors(ClassSerializerInterceptor)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   private allowedFields = ['id', 'email'];
 
+  @Get('me')
+  async getMe(@CurrentUser() user: User) {
+    return user;
+  }
+
   @Get()
+  @Public()
   findAll() {
-    return this.usersService.findAll();
+    const users = this.usersService.findAll();
+    return plainToInstance(ResponseUserDto, users);
   }
 
   @Get(':id')
-  async findOneById(@Param('id') id: string) {
-    const { password, ...rest } = await this.usersService.findOneByField(
-      'id',
-      id,
-    );
-    console.log(password);
-    return {
-      statusCode: HttpStatus.OK,
-      message: rest,
-    };
+  @Public()
+  async findOneById(@Param('id', ParseUUIDPipe) id: string) {
+    const user = await this.usersService.findOneByField('id', id);
+    return plainToInstance(ResponseUserDto, user);
   }
 
   @Get(':field/:value')
+  @Public()
   async findOneByField(
     @Param('field') field: string,
     @Param('value') value: string,
@@ -49,24 +61,26 @@ export class UsersController {
       throw new BadRequestException('Specified field is not allowed.');
     }
 
-    return {
-      statusCode: HttpStatus.OK,
-      message: await this.usersService.findOneByField(field, value),
-    };
+    return plainToInstance(
+      ResponseUserDto,
+      await this.usersService.findOneByField(field, value),
+    );
   }
 
   @Patch(':id')
+  @Roles(Role.ADMIN)
   async updateById(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    return {
-      statusCode: HttpStatus.OK,
-      message: await this.usersService.updateByField('id', id, updateUserDto),
-    };
+    return plainToInstance(
+      ResponseUserDto,
+      await this.usersService.updateByField('id', id, updateUserDto),
+    );
   }
 
   @Patch(':field/:value')
+  @Roles(Role.ADMIN)
   async updateByfield(
     @Param('field') field: string,
     @Param('value') value: string,
@@ -76,18 +90,15 @@ export class UsersController {
       throw new BadRequestException('Specified field is not allowed.');
     }
 
-    return {
-      statusCode: HttpStatus.OK,
-      message: await this.usersService.updateByField(
-        field,
-        value,
-        updateUserDto,
-      ),
-    };
+    return plainToInstance(
+      ResponseUserDto,
+      await this.usersService.updateByField(field, value, updateUserDto),
+    );
   }
 
   @Delete(':id')
-  async deleteById(@Param('id') id: string) {
+  @Roles(Role.ADMIN)
+  async deleteById(@Param('id', ParseUUIDPipe) id: string) {
     await this.usersService.deleteByField('id', id);
 
     return {
@@ -97,6 +108,7 @@ export class UsersController {
   }
 
   @Delete(':field/:value')
+  @Roles(Role.ADMIN)
   async deleteByField(
     @Param('field') field: string,
     @Param('value') value: string,

@@ -7,11 +7,11 @@ export class DatabaseService
   implements OnModuleInit, OnModuleDestroy
 {
   async onModuleInit() {
-    this.$connect;
+    await this.$connect();
   }
 
   async onModuleDestroy() {
-    this.$disconnect;
+    await this.$disconnect();
   }
 
   buildWhereClause(field: string, value: string) {

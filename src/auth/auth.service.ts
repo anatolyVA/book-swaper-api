@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { verify } from 'argon2';
 
@@ -22,31 +18,30 @@ export class AuthService {
     const user = await this.usersService.findOneByField('email', email);
 
     const isMatch = await verify(user.password, pass);
-    if (isMatch) {
-      const { password, ...result } = user;
-      console.log(password);
-      return result;
-    }
-    return null;
+    if (!isMatch) return null;
+
+    const { password, ...result } = user;
+    return result;
   }
 
   async login(loginDto: LoginDto) {
-    const { id, email } = await this.usersService.findOneByField(
+    const { id, email, role } = await this.usersService.findOneByField(
       'email',
       loginDto.email,
     );
 
-    const payload = { email, sub: id };
+    const payload = { email, sub: id, role };
 
     return this.signTokens(payload);
   }
 
   async refresh(refresh_token: string) {
     try {
-      const { email, sub } = this.jwtService.verify(refresh_token, {
+      const { email, sub, role } = this.jwtService.verify(refresh_token, {
         secret: jwtConstants.secret,
       });
-      return this.signTokens({ email, sub });
+
+      return this.signTokens({ email, sub, role });
     } catch (e) {
       console.error(e);
       throw new UnauthorizedException();
@@ -63,8 +58,8 @@ export class AuthService {
   }
 
   async register(createUserDto: CreateUserDto) {
-    const { email, id } = await this.usersService.create(createUserDto);
-    const payload = { email, sub: id };
+    const { email, id, role } = await this.usersService.create(createUserDto);
+    const payload = { email, sub: id, role };
     return this.signTokens(payload);
   }
 }
