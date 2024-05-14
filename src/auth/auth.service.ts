@@ -4,7 +4,6 @@ import { verify } from 'argon2';
 
 import { UsersService } from 'src/users/users.service';
 import { LoginDto } from './dto/login.dto';
-import { jwtConstants } from './constants';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 
 @Injectable()
@@ -20,8 +19,7 @@ export class AuthService {
     const isMatch = await verify(user.password, pass);
     if (!isMatch) return null;
 
-    const { password, ...result } = user;
-    return result;
+    return user;
   }
 
   async login(loginDto: LoginDto) {
@@ -38,7 +36,7 @@ export class AuthService {
   async refresh(refresh_token: string) {
     try {
       const { email, sub, role } = this.jwtService.verify(refresh_token, {
-        secret: jwtConstants.secret,
+        secret: process.env.JWT_SECRET,
       });
 
       return this.signTokens({ email, sub, role });
@@ -50,7 +48,9 @@ export class AuthService {
 
   protected signTokens(payload: any) {
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(payload, {
+        expiresIn: '30m',
+      }),
       refresh_token: this.jwtService.sign(payload, {
         expiresIn: '30d',
       }),

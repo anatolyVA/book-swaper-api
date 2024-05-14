@@ -1,19 +1,12 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
+import { Response } from 'express';
 
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { LocalAuthGuard } from './guards';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { Cookies } from './decorators/cookies.decorator';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -49,12 +42,13 @@ export class AuthController {
 
   @Get('refresh')
   async refresh(
-    @Req() request: Request,
+    @Cookies('refresh_token') refreshToken: string,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const { refresh_token, access_token } = await this.authService.refresh(
-      request.cookies['refresh_token'],
-    );
+    console.log(refreshToken);
+
+    const { refresh_token, access_token } =
+      await this.authService.refresh(refreshToken);
 
     await this.setRefreshTokenCookie(refresh_token, response);
 
@@ -73,8 +67,8 @@ export class AuthController {
   ) {
     response.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      // secure: process.env.NODE_ENV === 'production', // Set secure only in production
-      sameSite: 'strict',
+      secure: true, // Set secure only in production
+      sameSite: 'none',
     });
   }
 }
