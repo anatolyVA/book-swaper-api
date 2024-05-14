@@ -23,7 +23,7 @@ export class CreateCoffeeDto {
   imageUrl: string | null;
 
   @IsUUID()
-  beenId: string;
+  beansId: string;
 
   @IsEnum(CoffeeType)
   type: CoffeeType;

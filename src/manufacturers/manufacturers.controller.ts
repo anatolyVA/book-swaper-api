@@ -1,12 +1,12 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
   ParseUUIDPipe,
+  Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 
@@ -14,10 +14,10 @@ import { ManufacturersService } from './manufacturers.service';
 import { CreateManufacturerDto } from './dto/create-manufacturer.dto';
 import { UpdateManufacturerDto } from './dto/update-manufacturer.dto';
 
-import { BeenService } from '../been/been.service';
-import { CreateBeenDto } from '../been/dto/create-been.dto';
+import { BeansService } from '../beans/beans.service';
+import { CreateBeansDto } from '../beans/dto/create-beans.dto';
 import { JwtAuthGuard, RolesGuard } from '../auth/guards';
-import { Roles, Public } from '../auth/decorators';
+import { Public, Roles } from '../auth/decorators';
 import { Role } from '@prisma/client';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -25,7 +25,7 @@ import { Role } from '@prisma/client';
 export class ManufacturersController {
   constructor(
     private readonly manufacturersService: ManufacturersService,
-    private readonly beenService: BeenService,
+    private readonly beenService: BeansService,
   ) {}
 
   @Post()
@@ -34,11 +34,11 @@ export class ManufacturersController {
     return this.manufacturersService.create(createManufacturerDto);
   }
 
-  @Post(':id/been')
+  @Post(':id/beans')
   @Roles(Role.ADMIN)
   createBeen(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() createBeenDto: CreateBeenDto,
+    @Body() createBeenDto: CreateBeansDto,
   ) {
     return this.beenService.create(id, createBeenDto);
   }
@@ -49,7 +49,7 @@ export class ManufacturersController {
     return this.manufacturersService.findAll();
   }
 
-  @Get(':id/been')
+  @Get(':id/beans')
   @Public()
   findAllBeen(@Param('id', ParseUUIDPipe) id: string) {
     return this.beenService.findAllByManufacturer(id);

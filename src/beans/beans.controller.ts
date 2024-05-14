@@ -1,50 +1,50 @@
 import {
-  Controller,
-  Get,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
   ParseUUIDPipe,
+  Patch,
   UseGuards,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
 
-import { BeenService } from './been.service';
-import { UpdateBeenDto } from './dto/update-been.dto';
+import { BeansService } from './beans.service';
+import { UpdateBeansDto } from './dto/update-beans.dto';
 
 import { JwtAuthGuard, RolesGuard } from '../auth/guards';
-import { Roles, Public } from '../auth/decorators';
+import { Public, Roles } from '../auth/decorators';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('been')
-export class BeenController {
-  constructor(private readonly beenService: BeenService) {}
+@Controller('beans')
+export class BeansController {
+  constructor(private readonly beansService: BeansService) {}
 
   @Get()
   @Public()
   findAll() {
-    return this.beenService.findAll();
+    return this.beansService.findAll();
   }
 
   @Get(':id')
   @Public()
   findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.beenService.findOne(id);
+    return this.beansService.findOne(id);
   }
 
   @Patch(':id')
   @Roles(Role.ADMIN)
   update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateBeenDto: UpdateBeenDto,
+    @Body() updateBeenDto: UpdateBeansDto,
   ) {
-    return this.beenService.update(id, updateBeenDto);
+    return this.beansService.update(id, updateBeenDto);
   }
 
   @Delete(':id')
   @Roles(Role.ADMIN)
   remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.beenService.remove(id);
+    return this.beansService.remove(id);
   }
 }

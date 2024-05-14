@@ -4,10 +4,10 @@ import { ManufacturersService } from './manufacturers.service';
 import { ManufacturersController } from './manufacturers.controller';
 
 import { DatabaseModule } from '../database/database.module';
-import { BeenModule } from '../been/been.module';
+import { BeansModule } from '../beans/beans.module';
 
 @Module({
-  imports: [DatabaseModule, BeenModule],
+  imports: [DatabaseModule, BeansModule],
   controllers: [ManufacturersController],
   providers: [ManufacturersService],
 })

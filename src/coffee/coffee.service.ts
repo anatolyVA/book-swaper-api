@@ -6,13 +6,17 @@ import {
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
 import { UpdateCoffeeDto } from './dto/update-coffee.dto';
 import { DatabaseService } from '../database/database.service';
+import { BeansService } from '../beans/beans.service';
 
 @Injectable()
 export class CoffeeService {
-  constructor(private db: DatabaseService) {}
+  constructor(
+    private db: DatabaseService,
+    private beansService: BeansService,
+  ) {}
 
   async create(createCoffeeDto: CreateCoffeeDto) {
-    await this.checkBeenExisting(createCoffeeDto.beenId);
+    await this.beansService.findOne(createCoffeeDto.beansId);
 
     return this.db.coffee.create({
       data: createCoffeeDto,
@@ -20,13 +24,28 @@ export class CoffeeService {
   }
 
   async findAll() {
-    return this.db.coffee.findMany();
+    return this.db.coffee.findMany({
+      include: {
+        beans: {
+          include: {
+            manufacturer: true,
+          },
+        },
+      },
+    });
   }
 
   async findOne(id: string) {
     const coffee = await this.db.coffee.findUnique({
       where: {
-        id: id,
+        id,
+      },
+      include: {
+        beans: {
+          include: {
+            manufacturer: true,
+          },
+        },
       },
     });
 
@@ -47,15 +66,15 @@ export class CoffeeService {
       );
     }
 
-    const { beenId } = updateCoffeeDto;
+    const { beansId } = updateCoffeeDto;
 
-    if (beenId) {
-      await this.checkBeenExisting(beenId);
+    if (beansId) {
+      await this.beansService.findOne(beansId);
     }
 
     return this.db.coffee.update({
       where: {
-        id: id,
+        id,
       },
       data: updateCoffeeDto,
     });
@@ -65,20 +84,8 @@ export class CoffeeService {
     await this.findOne(id);
     return this.db.coffee.delete({
       where: {
-        id: id,
+        id,
       },
     });
-  }
-
-  private async checkBeenExisting(id: string) {
-    const been = await this.db.been.findUnique({
-      where: {
-        id: id,
-      },
-    });
-    if (!been) {
-      throw new NotFoundException('Been not found');
-    }
-    return true;
   }
 }

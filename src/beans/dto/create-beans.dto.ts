@@ -1,6 +1,6 @@
 import { IsString } from 'class-validator';
 
-export class CreateBeenDto {
+export class CreateBeansDto {
   @IsString()
   title: string;
 

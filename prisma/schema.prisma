@@ -27,7 +27,7 @@ model Basket {
   id     String @id @default(uuid()) @db.Uuid
   userId String @unique @map("user_id") @db.Uuid
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -43,8 +43,8 @@ model BasketItems {
 
   quantity Int
 
-  basket Basket @relation(fields: [basketId], references: [id])
-  coffee Coffee @relation(fields: [coffeeId], references: [id])
+  basket Basket @relation(fields: [basketId], references: [id], onDelete: Cascade)
+  coffee Coffee @relation(fields: [coffeeId], references: [id], onDelete: Cascade)
 
   @@id([basketId, coffeeId])
   @@map("basket_items")
@@ -71,16 +71,16 @@ model OrderItems {
 
   quantity Int
 
-  order  Order  @relation(fields: [orderId], references: [id])
-  coffee Coffee @relation(fields: [coffeeId], references: [id])
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  coffee Coffee @relation(fields: [coffeeId], references: [id], onDelete: Cascade)
 
   @@id([orderId, coffeeId])
   @@map("order_items")
 }
 
 model Coffee {
-  id     String @id @default(uuid()) @db.Uuid
-  beenId String @map("been_id") @db.Uuid
+  id      String @id @default(uuid()) @db.Uuid
+  beansId String @map("been_id") @db.Uuid
 
   title       String
   type        CoffeeType
@@ -91,14 +91,14 @@ model Coffee {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  been        Been          @relation(fields: [beenId], references: [id])
+  beans       Beans         @relation(fields: [beansId], references: [id], onDelete: Cascade)
   basketItems BasketItems[]
   orderItems  OrderItems[]
 
   @@map("coffee")
 }
 
-model Been {
+model Beans {
   id             String @id @default(uuid()) @db.Uuid
   manufacturerId String @map("manufacturer_id") @db.Uuid
 
@@ -108,7 +108,7 @@ model Been {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  manufacturer Manufacturer @relation(fields: [manufacturerId], references: [id])
+  manufacturer Manufacturer @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
 
   coffee Coffee[]
 
@@ -124,7 +124,7 @@ model Manufacturer {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  been Been[]
+  beans Beans[]
 
   @@map("manufacturers")
 }

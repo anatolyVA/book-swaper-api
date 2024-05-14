@@ -4,16 +4,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { CreateBeenDto } from './dto/create-been.dto';
+import { CreateBeansDto } from './dto/create-beans.dto';
 
-import { UpdateBeenDto } from './dto/update-been.dto';
+import { UpdateBeansDto } from './dto/update-beans.dto';
 import { DatabaseService } from '../database/database.service';
 
 @Injectable()
-export class BeenService {
+export class BeansService {
   constructor(private db: DatabaseService) {}
 
-  async create(manufacturerId: string, createBeenDto: CreateBeenDto) {
+  async create(manufacturerId: string, createBeansDto: CreateBeansDto) {
     const isManufacturerExist = await this.db.manufacturer.findUnique({
       where: { id: manufacturerId },
     });
@@ -22,20 +22,20 @@ export class BeenService {
       throw new NotFoundException('Manufacturer not found');
     }
 
-    return this.db.been.create({
+    return this.db.beans.create({
       data: {
-        ...createBeenDto,
+        ...createBeansDto,
         manufacturerId: manufacturerId,
       },
     });
   }
 
   async findAll() {
-    return this.db.been.findMany();
+    return this.db.beans.findMany();
   }
 
   async findAllByManufacturer(manufacturerId: string) {
-    return this.db.been.findMany({
+    return this.db.beans.findMany({
       where: {
         manufacturerId: manufacturerId,
       },
@@ -43,40 +43,40 @@ export class BeenService {
   }
 
   async findOne(id: string) {
-    const been = await this.db.been.findUnique({
+    const beans = await this.db.beans.findUnique({
       where: {
         id: id,
       },
     });
 
-    if (!been) {
-      throw new NotFoundException('Been not found');
+    if (!beans) {
+      throw new NotFoundException('beans not found');
     }
 
-    return been;
+    return beans;
   }
 
-  async update(id: string, updateBeenDto: UpdateBeenDto) {
+  async update(id: string, updateBeansDto: UpdateBeansDto) {
     await this.findOne(id);
 
-    const isBodyEmpty = Object.keys(updateBeenDto).length === 0;
+    const isBodyEmpty = Object.keys(updateBeansDto).length === 0;
     if (isBodyEmpty) {
       throw new BadRequestException(
         'You must specify at least one of the changing field.',
       );
     }
 
-    return this.db.been.update({
+    return this.db.beans.update({
       where: {
         id: id,
       },
-      data: updateBeenDto,
+      data: updateBeansDto,
     });
   }
 
   async remove(id: string) {
     await this.findOne(id);
-    await this.db.been.delete({
+    await this.db.beans.delete({
       where: {
         id: id,
       },
