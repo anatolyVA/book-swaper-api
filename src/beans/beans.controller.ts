@@ -23,8 +23,8 @@ export class BeansController {
 
   @Get()
   @Public()
-  findAll() {
-    return this.beansService.findAll();
+  async findAll() {
+    return await this.beansService.findAll();
   }
 
   @Get(':id')

@@ -39,6 +39,17 @@ export class BasketItemService {
           coffeeId: coffeeId,
         },
       },
+      include: {
+        coffee: {
+          include: {
+            beans: {
+              include: {
+                manufacturer: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!item) {
@@ -60,6 +71,7 @@ export class BasketItemService {
       },
     });
   }
+
   async update(userId: string, id: string, updateItemDto: UpdateItemDto) {
     const { basketId, coffeeId } = await this.findOne(userId, id);
 

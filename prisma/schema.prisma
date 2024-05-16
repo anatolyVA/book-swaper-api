@@ -54,7 +54,7 @@ model Order {
   id     String @id @default(uuid()) @db.Uuid
   userId String @map("user_id") @db.Uuid
 
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   status Status @default(PLACED)
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -112,7 +112,7 @@ model Beans {
 
   coffee Coffee[]
 
-  @@map("been")
+  @@map("beans")
 }
 
 model Manufacturer {

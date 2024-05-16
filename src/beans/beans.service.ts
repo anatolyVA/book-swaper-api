@@ -31,7 +31,7 @@ export class BeansService {
   }
 
   async findAll() {
-    return this.db.beans.findMany();
+    return await this.db.beans.findMany();
   }
 
   async findAllByManufacturer(manufacturerId: string) {
