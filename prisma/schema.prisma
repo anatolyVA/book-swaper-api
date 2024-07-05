@@ -17,124 +17,147 @@ model User {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  basket    Basket?
-  orders    Order[]
+
+  profile  Profile?
+  books    Book[]
+  comments SwapComment[]
 
   @@map("users")
 }
 
-model Basket {
+model Profile {
   id     String @id @default(uuid()) @db.Uuid
   userId String @unique @map("user_id") @db.Uuid
 
+  avatarUrl String? @map("avatar_url")
+  firstName String  @map("first_name")
+  lastName  String  @map("last_name")
+  country   String
+  city      String
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  basketItems BasketItems[]
-
-  @@map("baskets")
+  @@map("profiles")
 }
 
-model BasketItems {
-  basketId String @map("basket_id") @db.Uuid
-  coffeeId String @map("coffee_id") @db.Uuid
-
-  quantity Int
-
-  basket Basket @relation(fields: [basketId], references: [id], onDelete: Cascade)
-  coffee Coffee @relation(fields: [coffeeId], references: [id], onDelete: Cascade)
-
-  @@id([basketId, coffeeId])
-  @@map("basket_items")
-}
-
-model Order {
-  id     String @id @default(uuid()) @db.Uuid
-  userId String @map("user_id") @db.Uuid
-
-  user   User   @relation(fields: [userId], references: [id])
-  status Status @default(PLACED)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  orderItems OrderItems[]
-
-  @@map("orders")
-}
-
-model OrderItems {
-  orderId  String @map("basket_id") @db.Uuid
-  coffeeId String @map("coffee_id") @db.Uuid
-
-  quantity Int
-
-  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  coffee Coffee @relation(fields: [coffeeId], references: [id], onDelete: Cascade)
-
-  @@id([orderId, coffeeId])
-  @@map("order_items")
-}
-
-model Coffee {
-  id      String @id @default(uuid()) @db.Uuid
-  beansId String @map("been_id") @db.Uuid
-
-  title       String
-  type        CoffeeType
-  price       Decimal
-  description String
-  imageUrl    String?
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  beans       Beans         @relation(fields: [beansId], references: [id], onDelete: Cascade)
-  basketItems BasketItems[]
-  orderItems  OrderItems[]
-
-  @@map("coffee")
-}
-
-model Beans {
-  id             String @id @default(uuid()) @db.Uuid
-  manufacturerId String @map("manufacturer_id") @db.Uuid
+model Book {
+  id       String @id @default(uuid()) @db.Uuid
+  authorId String @map("author_id") @db.Uuid
+  ownerId  String @map("owner_id") @db.Uuid
 
   title       String
   description String
+  genre       Genre
+  language    String
+  coverType   CoverType     @map("cover_type")
+  condition   BookCondition
+  status      BookStatus    @default(AVAILABLE)
+
+  author Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  owner  User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  manufacturer Manufacturer @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+  swapsOffered   Swap[]      @relation("OfferedBooks")
+  swapsRequested Swap[]      @relation("RequestedBooks")
+  images         BookImage[]
 
-  coffee Coffee[]
-
-  @@map("been")
+  @@map("books")
 }
 
-model Manufacturer {
+model BookImage {
   id String @id @default(uuid()) @db.Uuid
 
-  title   String
-  country String
+  bookId    String  @db.Uuid
+  isPreview Boolean @default(false) @map("is_preview")
+  url       String
+
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@map("book_images")
+}
+
+model Swap {
+  id String @id @default(uuid()) @db.Uuid
+
+  offeringBookId  String @map("offering_book_id") @db.Uuid
+  requestedBookId String @map("requested_book_id") @db.Uuid
+
+  status SwapStatus @default(SENT)
+
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  offeringBook  Book          @relation("OfferedBooks", fields: [offeringBookId], references: [id], onDelete: Cascade)
+  requestedBook Book          @relation("RequestedBooks", fields: [requestedBookId], references: [id], onDelete: Cascade)
+  comments      SwapComment[]
+
+  @@unique([offeringBookId, requestedBookId])
+  @@map("swaps")
+}
+
+model SwapComment {
+  id     String @id @default(uuid()) @db.Uuid
+  swapId String @db.Uuid
+  userId String @db.Uuid
+
+  content String
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  beans Beans[]
+  swap Swap @relation(fields: [swapId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("manufacturers")
+  @@map("swap_comments")
 }
 
-enum Status {
-  PLACED
-  PROCCESSING
-  SHIPPED
-  DELIVIRED
-  CANCELED
+model Author {
+  id String @id @default(uuid()) @db.Uuid
+
+  firstName String  @map("first_name")
+  lastName  String  @map("last_name")
+  patronym  String? @map("patronym")
+
+  books Book[]
+
+  @@map("authors")
+}
+
+enum Genre {
+  FANTASY
+  SCIENCE_FICTION
+  ROMANCE
+  MYSTERY
+  THRILLER
+  HORROR
+  HISTORICAL
+  ADVENTURE
+  YOUNG_ADULT
+}
+
+enum CoverType {
+  HARD_COVER
+  PAPERBACK
+  DUST_JACKET
+  LEATHER_BOUND
+  SPIRAL_BOUND
+  OTHER
+}
+
+enum BookCondition {
+  NEW
+  LIKE_NEW
+  VERY_GOOD
+  GOOD
+  ACCEPTABLE
+  POOR
+  EX_LIBRARY
+  COLLECTORS_COPY
+  BLINDING_COPY
+  READING_COPY
 }
 
 enum Role {
@@ -142,16 +165,15 @@ enum Role {
   ADMIN
 }
 
-enum CoffeeType {
-  LATTE
-  ESPRESSO
-  AMERICANO
-  CAPPUCCINO
-  MACCHIATO
-  MOCHA
-  FLAT_WHITE
-  COLD_BREW
-  POUR_OVER
-  FRENCH_PRESS
-  TURKISH
+enum SwapStatus {
+  SENT
+  DECLINED
+  ACCEPTED
+  COMPLETED
+}
+
+enum BookStatus {
+  AVAILABLE
+  IN_SWAP
+  SWAPPED
 }

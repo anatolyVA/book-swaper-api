@@ -3,20 +3,18 @@ import { Module } from '@nestjs/common';
 import { UsersModule } from './users/users.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
-import { ManufacturersModule } from './manufacturers/manufacturers.module';
-import { BeansModule } from './beans/beans.module';
-import { CoffeeModule } from './coffee/coffee.module';
-import { BasketModule } from './basket/basket.module';
+import { AuthorsModule } from './authors/authors.module';
+import { BooksModule } from './books/books.module';
+import { SwapsModule } from './swaps/swaps.module';
 
 @Module({
   imports: [
     UsersModule,
     DatabaseModule,
     AuthModule,
-    ManufacturersModule,
-    BeansModule,
-    CoffeeModule,
-    BasketModule,
+    AuthorsModule,
+    BooksModule,
+    SwapsModule,
   ],
 })
 export class AppModule {}

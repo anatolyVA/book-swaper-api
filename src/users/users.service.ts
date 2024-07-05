@@ -10,14 +10,10 @@ import { DatabaseService } from 'src/database/database.service';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { BasketService } from '../basket/basket.service';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    private db: DatabaseService,
-    private basketService: BasketService,
-  ) {}
+  constructor(private db: DatabaseService) {}
 
   async create(createUserDto: CreateUserDto) {
     const existingUser = await this.db.recordsExists(
@@ -34,20 +30,27 @@ export class UsersService {
       data: {
         ...createUserDto,
         password: hashedPassword,
-        basket: {
-          create: {},
+        profile: {
+          create: createUserDto.profile,
         },
       },
     });
   }
 
   findAll() {
-    return this.db.user.findMany();
+    return this.db.user.findMany({
+      include: {
+        profile: true,
+      },
+    });
   }
 
   async findOneByField(field: string, value: string) {
     const user = await this.db.user.findUnique({
       where: this.db.buildWhereClause(field, value),
+      include: {
+        profile: true,
+      },
     });
     if (!user) {
       throw new NotFoundException('User was not found.');
@@ -95,7 +98,12 @@ export class UsersService {
 
     return this.db.user.update({
       where: this.db.buildWhereClause(field, value),
-      data: updateUserDto,
+      data: {
+        ...updateUserDto,
+        profile: {
+          update: updateUserDto.profile,
+        },
+      },
     });
   }
 
