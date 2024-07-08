@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   ClassSerializerInterceptor,
   Controller,
@@ -9,6 +8,7 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -16,11 +16,12 @@ import {
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CurrentUser, Roles, Public } from '../auth/decorators';
-import { Role, User } from '@prisma/client';
-import { RolesGuard, JwtAuthGuard } from '../auth/guards';
+import { CurrentUser, Public } from '../auth/decorators';
+import { User } from '@prisma/client';
+import { JwtAuthGuard, RolesGuard } from '../auth/guards';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { plainToInstance } from 'class-transformer';
+import { SwapsService } from '../swaps/swaps.service';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -28,13 +29,14 @@ import { plainToInstance } from 'class-transformer';
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
-
-  private allowedFields = ['id', 'email'];
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly swapsService: SwapsService,
+  ) {}
 
   @Get('me')
   async getMe(@CurrentUser() user: User) {
-    return user;
+    return plainToInstance(ResponseUserDto, user); // this.usersService.findOneByField('id', user.id)
   }
 
   @Get()
@@ -51,55 +53,24 @@ export class UsersController {
     return plainToInstance(ResponseUserDto, user);
   }
 
-  @Get(':field/:value')
-  @Public()
-  async findOneByField(
-    @Param('field') field: string,
-    @Param('value') value: string,
-  ) {
-    if (!this.allowedFields.includes(field)) {
-      throw new BadRequestException('Specified field is not allowed.');
-    }
-
-    return plainToInstance(
-      ResponseUserDto,
-      await this.usersService.findOneByField(field, value),
-    );
-  }
-
   @Patch(':id')
-  @Roles(Role.ADMIN)
   async updateById(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
+    @CurrentUser() user: User,
   ) {
     return plainToInstance(
       ResponseUserDto,
-      await this.usersService.updateByField('id', id, updateUserDto),
-    );
-  }
-
-  @Patch(':field/:value')
-  @Roles(Role.ADMIN)
-  async updateByfield(
-    @Param('field') field: string,
-    @Param('value') value: string,
-    @Body() updateUserDto: UpdateUserDto,
-  ) {
-    if (!this.allowedFields.includes(field)) {
-      throw new BadRequestException('Specified field is not allowed.');
-    }
-
-    return plainToInstance(
-      ResponseUserDto,
-      await this.usersService.updateByField(field, value, updateUserDto),
+      await this.usersService.updateByField('id', id, updateUserDto, user),
     );
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
-  async deleteById(@Param('id', ParseUUIDPipe) id: string) {
-    await this.usersService.deleteByField('id', id);
+  async deleteById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ) {
+    await this.usersService.deleteByField('id', id, user);
 
     return {
       statusCode: HttpStatus.NO_CONTENT,
@@ -107,21 +78,14 @@ export class UsersController {
     };
   }
 
-  @Delete(':field/:value')
-  @Roles(Role.ADMIN)
-  async deleteByField(
-    @Param('field') field: string,
-    @Param('value') value: string,
-  ) {
-    if (!this.allowedFields.includes(field)) {
-      throw new BadRequestException('Specified field is not allowed.');
+  @Get('me/swaps')
+  async getSwaps(@Query('type') type: string, @CurrentUser() user: User) {
+    if (type === 'sent') {
+      return this.swapsService.findAllSentByUser(user.id);
+    } else if (type === 'received') {
+      return this.swapsService.findAllReceivedByUser(user.id);
+    } else {
+      return this.swapsService.findAllByUserId(user.id);
     }
-
-    await this.usersService.deleteByField(field, value);
-
-    return {
-      statusCode: HttpStatus.NO_CONTENT,
-      message: null,
-    };
   }
 }

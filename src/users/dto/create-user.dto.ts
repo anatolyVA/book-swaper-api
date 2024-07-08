@@ -3,6 +3,8 @@ import {
   IsNotEmptyObject,
   IsObject,
   IsString,
+  MaxLength,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
@@ -10,9 +12,13 @@ import { Type } from 'class-transformer';
 
 class ProfileDto {
   @IsString()
+  @MinLength(2)
+  @MaxLength(50)
   firstName: string;
 
   @IsString()
+  @MinLength(2)
+  @MaxLength(50)
   lastName: string;
 
   @IsString()
@@ -29,6 +35,7 @@ export class CreateUserDto {
 
   @ApiProperty()
   @IsString()
+  @MinLength(6)
   password: string;
 
   @ApiProperty()

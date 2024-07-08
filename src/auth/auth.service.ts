@@ -23,23 +23,23 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const { id, email, role } = await this.usersService.findOneByField(
+    const { id } = await this.usersService.findOneByField(
       'email',
       loginDto.email,
     );
 
-    const payload = { email, sub: id, role };
+    const payload = { id: id };
 
     return this.signTokens(payload);
   }
 
   async refresh(refresh_token: string) {
     try {
-      const { email, sub, role } = this.jwtService.verify(refresh_token, {
+      const { id } = this.jwtService.verify(refresh_token, {
         secret: process.env.JWT_SECRET,
       });
 
-      return this.signTokens({ email, sub, role });
+      return this.signTokens({ id });
     } catch (e) {
       console.error(e);
       throw new UnauthorizedException();
@@ -58,8 +58,7 @@ export class AuthService {
   }
 
   async register(createUserDto: CreateUserDto) {
-    const { email, id, role } = await this.usersService.create(createUserDto);
-    const payload = { email, sub: id, role };
-    return this.signTokens(payload);
+    const { id } = await this.usersService.create(createUserDto);
+    return this.signTokens({ id });
   }
 }

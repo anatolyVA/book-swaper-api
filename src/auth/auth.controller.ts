@@ -11,6 +11,9 @@ import { Cookies } from './decorators/cookies.decorator';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
+  EXPIRE_DAY_REFRESH_TOKEN = 30;
+  REFRESH_TOKEN = 'refresh_token';
+
   constructor(private authService: AuthService) {}
 
   @UseGuards(LocalAuthGuard)
@@ -57,7 +60,7 @@ export class AuthController {
 
   @Get('logout')
   async logout(@Res({ passthrough: true }) response: Response) {
-    response.clearCookie('refresh_token');
+    response.clearCookie(this.REFRESH_TOKEN);
     return 'Successfully logged out.';
   }
 
@@ -65,10 +68,15 @@ export class AuthController {
     refreshToken: string,
     response: Response,
   ) {
-    response.cookie('refresh_token', refreshToken, {
+    const expiresIn = new Date();
+    expiresIn.setDate(expiresIn.getDate() + this.EXPIRE_DAY_REFRESH_TOKEN);
+
+    response.cookie(this.REFRESH_TOKEN, refreshToken, {
       httpOnly: true,
+      domain: 'localhost',
+      expires: expiresIn,
       secure: true, // Set secure only in production
-      sameSite: 'none',
+      sameSite: 'none', // lax in production
     });
   }
 }

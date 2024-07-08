@@ -8,5 +8,6 @@ import { BooksModule } from '../books/books.module';
   controllers: [SwapsController],
   providers: [SwapsService],
   imports: [DatabaseModule, BooksModule],
+  exports: [SwapsService],
 })
 export class SwapsModule {}

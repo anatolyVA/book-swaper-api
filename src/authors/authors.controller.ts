@@ -16,7 +16,8 @@ import { CreateAuthorDto } from './dto/create-author.dto';
 import { UpdateAuthorDto } from './dto/update-author.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard, RolesGuard } from '../auth/guards';
-import { Public } from '../auth/decorators';
+import { Public, Roles } from '../auth/decorators';
+import { Role } from '@prisma/client';
 
 @ApiBearerAuth()
 @UseInterceptors(ClassSerializerInterceptor)
@@ -26,7 +27,7 @@ export class AuthorsController {
   constructor(private readonly authorsService: AuthorsService) {}
 
   @Post()
-  @Public()
+  @Roles(Role.ADMIN)
   create(@Body() createAuthorDto: CreateAuthorDto) {
     return this.authorsService.create(createAuthorDto);
   }
@@ -44,6 +45,7 @@ export class AuthorsController {
   }
 
   @Patch(':id')
+  @Roles(Role.ADMIN)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateAuthorDto: UpdateAuthorDto,
@@ -52,6 +54,7 @@ export class AuthorsController {
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.authorsService.remove(id);
   }

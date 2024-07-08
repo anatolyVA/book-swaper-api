@@ -8,7 +8,7 @@ import { CreateSwapDto } from './dto/create-swap.dto';
 import { UpdateSwapDto } from './dto/update-swap.dto';
 import { DatabaseService } from '../database/database.service';
 import { BooksService } from '../books/books.service';
-import { User } from '@prisma/client';
+import { Book, User } from '@prisma/client';
 
 @Injectable()
 export class SwapsService {
@@ -39,7 +39,13 @@ export class SwapsService {
   }
 
   async findOne(id: string) {
-    const swap = await this.db.swap.findUnique({ where: { id } });
+    const swap = await this.db.swap.findUnique({
+      where: { id },
+      include: {
+        offeringBook: true,
+        requestedBook: true,
+      },
+    });
 
     if (!swap) {
       throw new NotFoundException('Swap not found');
@@ -48,12 +54,77 @@ export class SwapsService {
     return swap;
   }
 
+  async findAllSentByUser(userId: string) {
+    return this.db.swap.findMany({
+      where: {
+        offeringBook: {
+          owner: {
+            id: userId,
+          },
+        },
+      },
+    });
+  }
+
+  async findAllReceivedByUser(userId: string) {
+    return this.db.swap.findMany({
+      where: {
+        requestedBook: {
+          owner: {
+            id: userId,
+          },
+        },
+      },
+    });
+  }
+
+  async findAllByUserId(userId: string) {
+    return this.db.swap.findMany({
+      where: {
+        OR: [
+          {
+            offeringBook: {
+              owner: {
+                id: userId,
+              },
+            },
+          },
+          {
+            requestedBook: {
+              owner: {
+                id: userId,
+              },
+            },
+          },
+        ],
+      },
+    });
+  }
+
   async update(id: string, updateSwapDto: UpdateSwapDto, user: User) {
-    const swap = await this.db.swap.findUnique({ where: { id } });
+    const swap = await this.findOne(id);
+    if (
+      this.checkAccess(user, swap.offeringBook) ||
+      swap.requestedBook.ownerId !== user.id
+    ) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return this.db.swap.update({
+      where: { id },
+      data: updateSwapDto,
+    });
   }
 
   async remove(id: string, user: User) {
-    const swap = await this.db.swap.findUnique({ where: { id } });
-    return `This action removes a #${id} swap`;
+    const swap = await this.findOne(id);
+    if (this.checkAccess(user, swap.offeringBook)) {
+      throw new ForbiddenException('Access denied');
+    }
+    return this.db.swap.delete({ where: { id } });
+  }
+
+  private checkAccess(user: User, offeringBook: Book) {
+    return !(offeringBook.ownerId !== user.id || !user.role.includes('ADMIN'));
   }
 }

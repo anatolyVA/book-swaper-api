@@ -7,18 +7,17 @@ import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { DatabaseService } from '../database/database.service';
 import { User } from '@prisma/client';
+import { AuthorsService } from '../authors/authors.service';
 
 @Injectable()
 export class BooksService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly authorService: AuthorsService,
+  ) {}
   async create(createBookDto: CreateBookDto, ownerId: string) {
     const { authorId } = createBookDto;
-    const author = await this.db.author.findUnique({
-      where: { id: authorId },
-    });
-    if (!author) {
-      throw new NotFoundException('Author not found');
-    }
+    await this.authorService.findOne(authorId);
 
     return this.db.book.create({
       data: {

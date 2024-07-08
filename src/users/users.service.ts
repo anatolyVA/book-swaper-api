@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,6 +11,7 @@ import { DatabaseService } from 'src/database/database.service';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -37,7 +39,7 @@ export class UsersService {
     });
   }
 
-  findAll() {
+  async findAll() {
     return this.db.user.findMany({
       include: {
         profile: true,
@@ -63,14 +65,15 @@ export class UsersService {
     field: string,
     value: string,
     updateUserDto: UpdateUserDto,
+    user: User,
   ) {
-    const existingUser = await this.db.recordsExists(
-      field,
-      value,
-      this.db.user,
-    );
-    if (!existingUser) {
+    const userToUpdate = await this.findOneByField(field, value);
+    if (!userToUpdate) {
       throw new NotFoundException('User not found');
+    }
+
+    if (userToUpdate.id !== user.id) {
+      throw new ForbiddenException('Access denied');
     }
 
     const isBodyEmpty = Object.keys(updateUserDto).length === 0;
@@ -107,7 +110,13 @@ export class UsersService {
     });
   }
 
-  async deleteByField(field: string, value: string) {
+  async deleteByField(field: string, value: string, user: User) {
+    const userToDelete = await this.findOneByField(field, value);
+
+    if (userToDelete.id !== user.id) {
+      throw new ForbiddenException('Access denied');
+    }
+
     await this.db.user.delete({
       where: this.db.buildWhereClause(field, value),
     });

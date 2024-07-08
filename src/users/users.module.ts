@@ -4,9 +4,10 @@ import { DatabaseModule } from 'src/database/database.module';
 
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
+import { SwapsModule } from '../swaps/swaps.module';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, SwapsModule],
   exports: [UsersService],
   controllers: [UsersController],
   providers: [UsersService],
