@@ -37,6 +37,7 @@ export class BooksController {
   }
 
   @Get(':id')
+  @Public()
   findOne(@Param('id') id: string) {
     return this.booksService.findOne(id);
   }
