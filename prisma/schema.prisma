@@ -32,8 +32,9 @@ model Profile {
   avatarUrl String? @map("avatar_url")
   firstName String  @map("first_name")
   lastName  String  @map("last_name")
-  country   String
   city      String
+  country   String
+  state     String
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

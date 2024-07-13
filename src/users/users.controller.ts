@@ -22,6 +22,7 @@ import { JwtAuthGuard, RolesGuard } from '../auth/guards';
 import { ResponseUserDto } from './dto/response-user.dto';
 import { plainToInstance } from 'class-transformer';
 import { SwapsService } from '../swaps/swaps.service';
+import { BooksService } from '../books/books.service';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -32,6 +33,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly swapsService: SwapsService,
+    private readonly booksService: BooksService,
   ) {}
 
   @Get('me')
@@ -87,5 +89,15 @@ export class UsersController {
     } else {
       return this.swapsService.findAllByUserId(user.id);
     }
+  }
+
+  @Get('me/books')
+  async getBooks(@CurrentUser() user: User) {
+    return this.booksService.findAllByUserId(user.id);
+  }
+  @Get(':id/books')
+  @Public()
+  async getBooksByUserId(@Param('id', ParseUUIDPipe) id: string) {
+    return this.booksService.findAllByUserId(id);
   }
 }

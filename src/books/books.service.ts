@@ -15,6 +15,7 @@ export class BooksService {
     private readonly db: DatabaseService,
     private readonly authorService: AuthorsService,
   ) {}
+
   async create(createBookDto: CreateBookDto, ownerId: string) {
     const { authorId } = createBookDto;
     await this.authorService.findOne(authorId);
@@ -27,6 +28,7 @@ export class BooksService {
       include: {
         author: true,
         images: true,
+        owner: { include: { profile: true } },
       },
     });
   }
@@ -36,6 +38,7 @@ export class BooksService {
       include: {
         author: true,
         images: true,
+        owner: { include: { profile: true } },
       },
     });
   }
@@ -43,19 +46,25 @@ export class BooksService {
   async findOne(id: string) {
     const book = await this.db.book.findUnique({
       where: { id },
-      include: { author: true, images: true },
+      include: {
+        author: true,
+        images: true,
+        owner: { include: { profile: true } },
+      },
     });
     if (!book) {
       throw new NotFoundException('Book not found');
     }
     return book;
   }
+
   async findAllByUserId(userId: string) {
     return this.db.book.findMany({
       where: { ownerId: userId },
       include: {
         author: true,
         images: true,
+        owner: { include: { profile: true } },
       },
     });
   }
@@ -73,6 +82,7 @@ export class BooksService {
       include: {
         author: true,
         images: true,
+        owner: { include: { profile: true } },
       },
     });
   }

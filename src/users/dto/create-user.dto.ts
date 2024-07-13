@@ -26,6 +26,9 @@ class ProfileDto {
 
   @IsString()
   city: string;
+
+  @IsString()
+  state: string;
 }
 
 export class CreateUserDto {
