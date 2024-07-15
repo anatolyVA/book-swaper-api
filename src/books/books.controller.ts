@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   ClassSerializerInterceptor,
   Controller,
@@ -7,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -17,6 +19,13 @@ import { CurrentUser, Public } from '../auth/decorators';
 import { User } from '@prisma/client';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard, RolesGuard } from '../auth/guards';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import * as path from 'node:path';
+import { v4 } from 'uuid';
+
+const EXTENSIONS = ['.jpeg', '.jpg', '.png', '.webp'];
+const MAX_SIZE = 5 * 1024 * 1024;
 
 @ApiBearerAuth()
 @UseInterceptors(ClassSerializerInterceptor)
@@ -26,8 +35,39 @@ export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
   @Post()
-  create(@Body() createBookDto: CreateBookDto, @CurrentUser() user: User) {
-    return this.booksService.create(createBookDto, user.id);
+  @UseInterceptors(
+    FilesInterceptor('images', 5, {
+      storage: diskStorage({
+        destination: './uploads/books',
+        filename: (req, file, cb) => {
+          const filename: string = v4();
+          const extension = path.parse(file.originalname).ext;
+          cb(null, `${filename}${extension}`);
+        },
+      }),
+      limits: {
+        fileSize: MAX_SIZE,
+      },
+      fileFilter: (req, file, cb) => {
+        if (!EXTENSIONS.includes(path.extname(file.originalname))) {
+          return cb(
+            new BadRequestException(
+              'Only images with extensions: jpeg, jpg, png, webp are allowed',
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  create(
+    @Body() createBookDto: CreateBookDto,
+    @CurrentUser() user: User,
+    @UploadedFiles()
+    images: Express.Multer.File[],
+  ) {
+    return this.booksService.create(createBookDto, user.id, images);
   }
 
   @Get()

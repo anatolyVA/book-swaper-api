@@ -18,7 +18,7 @@ export class CreateBookDto {
   description: string;
 
   @IsString()
-  language: string;
+  languageCode: string;
 
   @IsEnum(Genre)
   genre: Genre;

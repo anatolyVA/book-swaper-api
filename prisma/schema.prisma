@@ -29,12 +29,12 @@ model Profile {
   id     String @id @default(uuid()) @db.Uuid
   userId String @unique @map("user_id") @db.Uuid
 
-  avatarUrl String? @map("avatar_url")
-  firstName String  @map("first_name")
-  lastName  String  @map("last_name")
-  city      String
-  country   String
-  state     String
+  avatarPath String? @map("avatar_path")
+  firstName  String  @map("first_name")
+  lastName   String  @map("last_name")
+  city       String
+  country    String
+  state      String
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -46,13 +46,13 @@ model Book {
   authorId String @map("author_id") @db.Uuid
   ownerId  String @map("owner_id") @db.Uuid
 
-  title       String
-  description String
-  genre       Genre
-  language    String
-  coverType   CoverType     @map("cover_type")
-  condition   BookCondition
-  status      BookStatus    @default(AVAILABLE)
+  title        String
+  description  String
+  genre        Genre
+  languageCode String        @map("language_code")
+  coverType    CoverType     @map("cover_type")
+  condition    BookCondition
+  status       BookStatus    @default(AVAILABLE)
 
   author Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
   owner  User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
@@ -62,6 +62,7 @@ model Book {
 
   swapsOffered   Swap[]      @relation("OfferedBooks")
   swapsRequested Swap[]      @relation("RequestedBooks")
+  language       Language    @relation(fields: [languageCode], references: [code], onDelete: Cascade)
   images         BookImage[]
 
   @@map("books")
@@ -72,7 +73,7 @@ model BookImage {
 
   bookId    String  @db.Uuid
   isPreview Boolean @default(false) @map("is_preview")
-  url       String
+  path      String
 
   book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
@@ -113,6 +114,15 @@ model SwapComment {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("swap_comments")
+}
+
+model Language {
+  code String @id
+  name String
+
+  books Book[]
+
+  @@map("languages")
 }
 
 model Author {

@@ -8,26 +8,41 @@ import { UpdateBookDto } from './dto/update-book.dto';
 import { DatabaseService } from '../database/database.service';
 import { User } from '@prisma/client';
 import { AuthorsService } from '../authors/authors.service';
+import * as fs from 'node:fs';
+import { LanguagesService } from '../languages/languages.service';
 
 @Injectable()
 export class BooksService {
   constructor(
     private readonly db: DatabaseService,
     private readonly authorService: AuthorsService,
+    private readonly languagesService: LanguagesService,
   ) {}
 
-  async create(createBookDto: CreateBookDto, ownerId: string) {
+  async create(
+    createBookDto: CreateBookDto,
+    ownerId: string,
+    images: Express.Multer.File[],
+  ) {
     const { authorId } = createBookDto;
     await this.authorService.findOne(authorId);
+    await this.languagesService.findOne(createBookDto.languageCode);
 
     return this.db.book.create({
       data: {
         ...createBookDto,
         ownerId,
+        images: {
+          create: images.map((image, index) => ({
+            path: image.path,
+            isPreview: index === 0,
+          })),
+        },
       },
       include: {
         author: true,
         images: true,
+        language: true,
         owner: { include: { profile: true } },
       },
     });
@@ -38,6 +53,7 @@ export class BooksService {
       include: {
         author: true,
         images: true,
+        language: true,
         owner: { include: { profile: true } },
       },
     });
@@ -49,6 +65,7 @@ export class BooksService {
       include: {
         author: true,
         images: true,
+        language: true,
         owner: { include: { profile: true } },
       },
     });
@@ -64,6 +81,7 @@ export class BooksService {
       include: {
         author: true,
         images: true,
+        language: true,
         owner: { include: { profile: true } },
       },
     });
@@ -82,6 +100,7 @@ export class BooksService {
       include: {
         author: true,
         images: true,
+        language: true,
         owner: { include: { profile: true } },
       },
     });
@@ -90,9 +109,15 @@ export class BooksService {
   async remove(id: string, user: User) {
     const book = await this.findOne(id);
 
-    if (book.ownerId !== user.id || !user.role.includes('ADMIN')) {
+    if (book.ownerId !== user.id && !user.role.includes('ADMIN')) {
       throw new ForbiddenException('Access denied');
     }
+
+    const { images } = book;
+    images.forEach((value) => {
+      fs.unlinkSync(value.path);
+    });
+
     return this.db.book.delete({ where: { id } });
   }
 }

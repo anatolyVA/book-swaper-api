@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { AuthorsModule } from './authors/authors.module';
 import { BooksModule } from './books/books.module';
 import { SwapsModule } from './swaps/swaps.module';
+import { LanguagesModule } from './languages/languages.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SwapsModule } from './swaps/swaps.module';
     AuthorsModule,
     BooksModule,
     SwapsModule,
+    LanguagesModule,
   ],
 })
 export class AppModule {}
