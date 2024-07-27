@@ -1,31 +1,27 @@
 import {
-  BadRequestException,
   Body,
   ClassSerializerInterceptor,
   Controller,
   Delete,
   Get,
   Param,
-  Patch,
+  ParseUUIDPipe,
   Post,
+  Query,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/create-book.dto';
-import { UpdateBookDto } from './dto/update-book.dto';
 import { CurrentUser, Public } from '../auth/decorators';
 import { User } from '@prisma/client';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard, RolesGuard } from '../auth/guards';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import * as path from 'node:path';
-import { v4 } from 'uuid';
-
-const EXTENSIONS = ['.jpeg', '.jpg', '.png', '.webp'];
-const MAX_SIZE = 5 * 1024 * 1024;
+import { multerOptions } from './multer.config';
+import { QueryDto } from './dto/query.dto';
+import { QueryTransformPipe } from './query-transform.pipe';
 
 @ApiBearerAuth()
 @UseInterceptors(ClassSerializerInterceptor)
@@ -35,45 +31,23 @@ export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
   @Post()
-  @UseInterceptors(
-    FilesInterceptor('images', 5, {
-      storage: diskStorage({
-        destination: './uploads/books',
-        filename: (req, file, cb) => {
-          const filename: string = v4();
-          const extension = path.parse(file.originalname).ext;
-          cb(null, `${filename}${extension}`);
-        },
-      }),
-      limits: {
-        fileSize: MAX_SIZE,
-      },
-      fileFilter: (req, file, cb) => {
-        if (!EXTENSIONS.includes(path.extname(file.originalname))) {
-          return cb(
-            new BadRequestException(
-              'Only images with extensions: jpeg, jpg, png, webp are allowed',
-            ),
-            false,
-          );
-        }
-        cb(null, true);
-      },
-    }),
-  )
-  create(
-    @Body() createBookDto: CreateBookDto,
-    @CurrentUser() user: User,
-    @UploadedFiles()
-    images: Express.Multer.File[],
+  create(@Body() createBookDto: CreateBookDto, @CurrentUser() user: User) {
+    return this.booksService.create(createBookDto, user.id);
+  }
+
+  @Post(':id/upload-images')
+  @UseInterceptors(FilesInterceptor('images', 5, multerOptions))
+  uploadImages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFiles() images: Express.Multer.File[],
   ) {
-    return this.booksService.create(createBookDto, user.id, images);
+    return this.booksService.uploadImages(id, images);
   }
 
   @Get()
   @Public()
-  findAll() {
-    return this.booksService.findAll();
+  findAllByQuery(@Query(new QueryTransformPipe()) queryDto: QueryDto) {
+    return this.booksService.findAllByQuery(queryDto);
   }
 
   @Get(':id')
@@ -82,15 +56,14 @@ export class BooksController {
     return this.booksService.findOne(id);
   }
 
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateBookDto: UpdateBookDto,
-    @CurrentUser() user: User,
-  ) {
-    return this.booksService.update(id, updateBookDto, user);
+  @Get(':id/similar')
+  @Public()
+  findSimilar(@Param('id') id: string) {
+    return this.booksService.findSimilar(id);
   }
 
+  //accept
+  //decline
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser() user: User) {
     return this.booksService.remove(id, user);

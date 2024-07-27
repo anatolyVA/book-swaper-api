@@ -18,9 +18,11 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  profile  Profile?
-  books    Book[]
-  comments SwapComment[]
+  profile        Profile?
+  books          Book[]
+  comments       SwapComment[]
+  swapRequests   SwapRequest[] @relation("Requester")
+  swapReceivings SwapRequest[] @relation("Recipient")
 
   @@map("users")
 }
@@ -60,10 +62,10 @@ model Book {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  swapsOffered   Swap[]      @relation("OfferedBooks")
-  swapsRequested Swap[]      @relation("RequestedBooks")
-  language       Language    @relation(fields: [languageCode], references: [code], onDelete: Cascade)
-  images         BookImage[]
+  language      Language      @relation(fields: [languageCode], references: [code], onDelete: Cascade)
+  images        BookImage[]
+  swapOffered   SwapRequest[] @relation("OfferedBooks")
+  swapRequested SwapRequest[] @relation("RequestedBooks")
 
   @@map("books")
 }
@@ -80,23 +82,43 @@ model BookImage {
   @@map("book_images")
 }
 
+model SwapRequest {
+  id String @id @default(uuid()) @db.Uuid
+
+  offeredBookId   String @map("offered_book_id") @db.Uuid
+  requestedBookId String @map("requested_book_id") @db.Uuid
+  requesterId     String @map("requester_id") @db.Uuid
+  recipientId     String @map("target_id") @db.Uuid
+
+  status    SwapRequestStatus @default(PENDING)
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+
+  requester User @relation("Requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  recipient User @relation("Recipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  offeredBook   Book  @relation("OfferedBooks", fields: [offeredBookId], references: [id], onDelete: Cascade)
+  requestedBook Book  @relation("RequestedBooks", fields: [requestedBookId], references: [id], onDelete: Cascade)
+  swap          Swap?
+
+  @@unique([requestedBookId, offeredBookId, requesterId, recipientId])
+}
+
 model Swap {
   id String @id @default(uuid()) @db.Uuid
 
-  offeringBookId  String @map("offering_book_id") @db.Uuid
-  requestedBookId String @map("requested_book_id") @db.Uuid
+  swapRequestId String @unique @map("swap_request_id") @db.Uuid
 
-  status SwapStatus @default(SENT)
+  status SwapStatus @default(IN_PROGRESS)
 
   completedAt DateTime? @map("completed_at")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  offeringBook  Book          @relation("OfferedBooks", fields: [offeringBookId], references: [id], onDelete: Cascade)
-  requestedBook Book          @relation("RequestedBooks", fields: [requestedBookId], references: [id], onDelete: Cascade)
-  comments      SwapComment[]
+  request SwapRequest @relation(fields: [swapRequestId], references: [id], onDelete: Cascade)
 
-  @@unique([offeringBookId, requestedBookId])
+  comments SwapComment[]
+
   @@map("swaps")
 }
 
@@ -176,11 +198,16 @@ enum Role {
   ADMIN
 }
 
-enum SwapStatus {
-  SENT
-  DECLINED
+enum SwapRequestStatus {
+  PENDING
   ACCEPTED
+  REJECTED
+}
+
+enum SwapStatus {
+  IN_PROGRESS
   COMPLETED
+  CANCELLED
 }
 
 enum BookStatus {

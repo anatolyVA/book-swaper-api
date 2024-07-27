@@ -41,7 +41,6 @@ export class AuthService {
 
       return this.signTokens({ id });
     } catch (e) {
-      console.error(e);
       throw new UnauthorizedException();
     }
   }

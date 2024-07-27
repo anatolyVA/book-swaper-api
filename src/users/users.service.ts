@@ -60,6 +60,20 @@ export class UsersService {
 
     return user;
   }
+  async findOne(id: string) {
+    const user = await this.db.user.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        profile: true,
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('User was not found.');
+    }
+    return user;
+  }
 
   async updateByField(
     field: string,

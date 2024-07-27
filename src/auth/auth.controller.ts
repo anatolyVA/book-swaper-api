@@ -48,8 +48,6 @@ export class AuthController {
     @Cookies('refresh_token') refreshToken: string,
     @Res({ passthrough: true }) response: Response,
   ) {
-    console.log(refreshToken);
-
     const { refresh_token, access_token } =
       await this.authService.refresh(refreshToken);
 

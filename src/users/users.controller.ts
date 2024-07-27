@@ -8,7 +8,6 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
-  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -80,16 +79,16 @@ export class UsersController {
     };
   }
 
-  @Get('me/swaps')
-  async getSwaps(@Query('type') type: string, @CurrentUser() user: User) {
-    if (type === 'sent') {
-      return this.swapsService.findAllSentByUser(user.id);
-    } else if (type === 'received') {
-      return this.swapsService.findAllReceivedByUser(user.id);
-    } else {
-      return this.swapsService.findAllByUserId(user.id);
-    }
-  }
+  // @Get('me/swaps')
+  // async getSwaps(@Query('type') type: string, @CurrentUser() user: User) {
+  //   if (type === 'sent') {
+  //     return this.swapsService.findAllSentByUser(user.id);
+  //   } else if (type === 'received') {
+  //     return this.swapsService.findAllReceivedByUser(user.id);
+  //   } else {
+  //     return this.swapsService.findAllByUserId(user.id);
+  //   }
+  // }
 
   @Get('me/books')
   async getBooks(@CurrentUser() user: User) {
