@@ -94,9 +94,19 @@ export class UsersController {
   async getBooks(@CurrentUser() user: User) {
     return this.booksService.findAllByUserId(user.id);
   }
+  @Get('me/statistics')
+  async getCurrentUserStatistics(@CurrentUser() user: User) {
+    return this.usersService.getUserStatistics(user.id);
+  }
+
   @Get(':id/books')
   @Public()
   async getBooksByUserId(@Param('id', ParseUUIDPipe) id: string) {
     return this.booksService.findAllByUserId(id);
+  }
+
+  @Get(':id/statistics')
+  async getUserStatistics(@Param('id', ParseUUIDPipe) id: string) {
+    return this.usersService.getUserStatistics(id);
   }
 }

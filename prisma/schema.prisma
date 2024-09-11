@@ -21,8 +21,9 @@ model User {
   profile        Profile?
   books          Book[]
   comments       SwapComment[]
-  swapRequests   SwapRequest[] @relation("Requester")
-  swapReceivings SwapRequest[] @relation("Recipient")
+  swapRequests   SwapRequest[]  @relation("Requester")
+  swapReceivings SwapRequest[]  @relation("Recipient")
+  favoriteBooks  FavoriteBook[]
 
   @@map("users")
 }
@@ -62,12 +63,24 @@ model Book {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  language      Language      @relation(fields: [languageCode], references: [code], onDelete: Cascade)
+  language      Language       @relation(fields: [languageCode], references: [code], onDelete: Cascade)
   images        BookImage[]
-  swapOffered   SwapRequest[] @relation("OfferedBooks")
-  swapRequested SwapRequest[] @relation("RequestedBooks")
+  swapOffered   SwapRequest[]  @relation("OfferedBooks")
+  swapRequested SwapRequest[]  @relation("RequestedBooks")
+  favoriteBooks FavoriteBook[]
 
   @@map("books")
+}
+
+model FavoriteBook {
+  userId String @map("user_id") @db.Uuid
+  bookId String @map("book_id") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@id([userId, bookId])
+  @@map("favorite_books")
 }
 
 model BookImage {

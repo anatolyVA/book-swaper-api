@@ -22,7 +22,7 @@ export class BooksService {
     private readonly languagesService: LanguagesService,
   ) {}
 
-  private readonly include: Prisma.BookInclude = {
+  public readonly include: Prisma.BookInclude = {
     author: true,
     images: true,
     language: true,

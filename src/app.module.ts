@@ -8,6 +8,7 @@ import { BooksModule } from './books/books.module';
 import { SwapsModule } from './swaps/swaps.module';
 import { LanguagesModule } from './languages/languages.module';
 import { SwapRequestsModule } from './swap-requests/swap-requests.module';
+import { FavoritesModule } from './favorites/favorites.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { SwapRequestsModule } from './swap-requests/swap-requests.module';
     SwapsModule,
     LanguagesModule,
     SwapRequestsModule,
+    FavoritesModule,
   ],
 })
 export class AppModule {}

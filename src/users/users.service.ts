@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { hash } from 'argon2';
+import { hash, verify } from 'argon2';
 
 import { DatabaseService } from 'src/database/database.service';
 
@@ -82,9 +82,6 @@ export class UsersService {
     user: User,
   ) {
     const userToUpdate = await this.findOneByField(field, value);
-    if (!userToUpdate) {
-      throw new NotFoundException('User not found');
-    }
 
     if (userToUpdate.id !== user.id) {
       throw new ForbiddenException('Access denied');
@@ -97,31 +94,45 @@ export class UsersService {
       );
     }
 
-    const { email, password } = updateUserDto;
+    const { email, oldPassword, newPassword, profile, ...rest } = updateUserDto;
 
     if (email) {
       const existingEmail = await this.db.recordsExists(
         'email',
-        updateUserDto.email,
+        email,
         this.db.user,
       );
 
-      if (existingEmail) {
-        throw new ConflictException('Email is alredy taken');
+      if (email !== userToUpdate.email && existingEmail) {
+        throw new ConflictException('Email is already taken');
       }
-    } else if (password) {
-      updateUserDto.password = await hash(password);
+    }
+    if (newPassword) {
+      await this.validatePassword(oldPassword, userToUpdate);
     }
 
     return this.db.user.update({
       where: this.db.buildWhereClause(field, value),
       data: {
-        ...updateUserDto,
+        ...rest,
+        email: email ? email : undefined,
+        password: newPassword ? await hash(newPassword) : undefined,
         profile: {
-          update: updateUserDto.profile,
+          update: profile ? profile : undefined,
         },
       },
     });
+  }
+
+  private async validatePassword(password: string, user: User) {
+    if (!password) {
+      throw new ForbiddenException('Old password is required');
+    }
+    const isPasswordValid = await verify(user.password, password);
+    console.log(isPasswordValid);
+    if (!isPasswordValid) {
+      throw new ForbiddenException('Old password is incorrect');
+    }
   }
 
   async deleteByField(field: string, value: string, user: User) {
@@ -134,5 +145,17 @@ export class UsersService {
     await this.db.user.delete({
       where: this.db.buildWhereClause(field, value),
     });
+  }
+
+  async getUserStatistics(id: string) {
+    const user = await this.findOne(id);
+    return {
+      bookCount: await this.db.book.count({
+        where: { ownerId: user.id },
+      }),
+      successSwapsCount: await this.db.swap.count({
+        where: { request: { requesterId: user.id }, status: 'COMPLETED' },
+      }),
+    };
   }
 }
